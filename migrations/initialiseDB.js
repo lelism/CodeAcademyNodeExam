@@ -18,13 +18,13 @@ function selectDB(connection) {
 function createProductsTable(connection) {
     const sqlQuery = 
         `CREATE TABLE IF NOT EXISTS products(
-            ProductID INT AUTO_INCREMENT,
-            ProductName VARCHAR(255) NOT NULL,
-            SupplierID INT NOT NULL,
-            CategoryID INT NOT NULL,
-            QuantityPerUnit INT NOT NULL DEFAULT 1,
-            UnitPrice FLOAT NOT NULL,
-            PRIMARY KEY (ProductID)
+            productID INT AUTO_INCREMENT,
+            productName VARCHAR(255) NOT NULL,
+            supplierID INT NOT NULL,
+            categoryID INT NOT NULL,
+            quantityPerUnit INT NOT NULL DEFAULT 1,
+            unitPrice FLOAT NOT NULL,
+            PRIMARY KEY (productID)
         )`;
     connection.query(sqlQuery, function (err, result) {
         if (err) throw err;
@@ -35,16 +35,16 @@ function createProductsTable(connection) {
 function createEmployeesTable(connection) {
     const sqlQuery = 
         `CREATE TABLE IF NOT EXISTS employees(
-            EmployeeID INT AUTO_INCREMENT,
-            LastName VARCHAR(50) NOT NULL,
-            FirstName VARCHAR(50) NOT NULL,
-            Title VARCHAR(50) NOT NULL,
-            TitleOfCourtesy VARCHAR(5) NOT NULL,
-            BirthDate DATE,
-            HireDate DATE NOT NULL,
-            Address VARCHAR(100) NOT NULL,
-            City VARCHAR(15) NOT NULL,
-            PRIMARY KEY (EmployeeID)
+            employeeID INT AUTO_INCREMENT,
+            lastName VARCHAR(50) NOT NULL,
+            firstName VARCHAR(50) NOT NULL,
+            title VARCHAR(50) NOT NULL,
+            titleOfCourtesy VARCHAR(5) NOT NULL,
+            birthDate DATE,
+            hireDate DATE NOT NULL,
+            address VARCHAR(100) NOT NULL,
+            city VARCHAR(15) NOT NULL,
+            PRIMARY KEY (employeeID)
         )`;
     connection.query(sqlQuery, function (err, result) {
         if (err) throw err;
@@ -55,10 +55,10 @@ function createEmployeesTable(connection) {
 function createShippersTable(connection) {
     const sqlQuery = 
         `CREATE TABLE IF NOT EXISTS shippers(
-            ShipperID INT AUTO_INCREMENT,
-            CompanyName VARCHAR(50) NOT NULL,
-            Phone INT NOT NULL,
-            PRIMARY KEY (ShipperID)
+            shipperID INT AUTO_INCREMENT,
+            companyName VARCHAR(50) NOT NULL,
+            phone INT NOT NULL,
+            PRIMARY KEY (shipperID)
         )`;
     connection.query(sqlQuery, function (err, result) {
         if (err) throw err;
@@ -69,13 +69,13 @@ function createShippersTable(connection) {
 function createOrdersTable(connection) {
     const sqlQuery = 
         `CREATE TABLE IF NOT EXISTS orders(
-            OrderID INT AUTO_INCREMENT,
-            CustomerID INT NOT NULL,
-            ShipperID INT NOT NULL,
-            OrderDate DATE NOT NULL,
-            PRIMARY KEY (OrderID),
-            CONSTRAINT fk_ordersTOemployees FOREIGN KEY (CustomerID) REFERENCES employees(EmployeeID),
-            CONSTRAINT fk_ordersTOshippers FOREIGN KEY (ShipperID) REFERENCES shippers(ShipperID)
+            orderID INT AUTO_INCREMENT,
+            customerID INT NOT NULL,
+            shipperID INT NOT NULL,
+            orderDate DATE NOT NULL,
+            PRIMARY KEY (orderID),
+            CONSTRAINT fk_orders_employees FOREIGN KEY (customerID) REFERENCES employees(employeeID),
+            CONSTRAINT fk_orders_shippers FOREIGN KEY (shipperID) REFERENCES shippers(shipperID)
         )`;
     connection.query(sqlQuery, function (err, result) {
         if (err) throw err;
@@ -86,13 +86,13 @@ function createOrdersTable(connection) {
 function createOrderDetailsTable(connection) {
     const sqlQuery = 
         `CREATE TABLE IF NOT EXISTS orderDetails(
-            OrderID INT NOT NULL,
-            ProductID INT NOT NULL,
-            UnitPrice FLOAT NOT NULL,
-            Quantity INT NOT NULL,
-            Discount INT DEFAULT 0,
-            CONSTRAINT fk_orderDetailsTOorders FOREIGN KEY (OrderID) REFERENCES orders(OrderID),
-            CONSTRAINT fk_orderDetailsTOproducts FOREIGN KEY (ProductID) REFERENCES products(ProductID)
+            orderID INT NOT NULL,
+            productID INT NOT NULL,
+            unitPrice FLOAT NOT NULL,
+            quantity INT NOT NULL,
+            discount INT DEFAULT 0,
+            CONSTRAINT fk_orderDetails_orders FOREIGN KEY (orderID) REFERENCES orders(orderID),
+            CONSTRAINT fk_orderDetails_products FOREIGN KEY (productID) REFERENCES products(productID)
         )`;
     connection.query(sqlQuery, function (err, result) {
         if (err) throw err;
