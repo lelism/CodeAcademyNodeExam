@@ -4,7 +4,7 @@ const DB_PORT = process.env.DB_PORT;
 const USER = process.env.DB_USER;
 const PASSWORD = process.env.DB_PASSWORD;
 const DBName = process.env.DB_NAME;
-const initialise = require("../migrations/initialiseDB");
+const initialiseDB = require("./initialiseDB");
 
 const connection = mysql.createConnection({
     host: HOST,
@@ -18,13 +18,7 @@ connection.connect((err) => {
         throw err
     }
     console.log("Connected to MySQL Server!");
-    initialise.createDB(connection);
-    initialise.selectDB(connection);
-    initialise.createProductsTable(connection);
-    initialise.createEmployeesTable(connection);
-    initialise.createShippersTable(connection);
-    initialise.createOrdersTable(connection);
-    initialise.createOrderDetailsTable(connection);
+    initialiseDB(connection, DBName);
 });
 
 module.exports = connection;

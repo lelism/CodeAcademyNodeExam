@@ -19,9 +19,6 @@ const startShipperRoutes = (app) => {
 
   // Delete a Shipper with id
   router.delete("/:id", shippers.delete);
-  
-  // Delete all Shippers
-  router.delete("/", shippers.deleteAll);
 
   app.use('/api/shippers', router);
 }

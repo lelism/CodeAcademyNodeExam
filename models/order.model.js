@@ -1,17 +1,13 @@
 const sql = require("../config/db.js");
+const mysql = require("mysql");
+const { OrderDetails } = require("../commons/constructors");
 
-const Order = function(order) {                             //dummy values for DB fill up 
-  this.customerID = order.customerID                    || Math.floor(Math.random() * 10);
-  this.shipperID = order.shipperID                      || Math.floor(Math.random() * 10);
-  this.orderDate = order.orderDate                      || "2000-01-01";
-  // this.productID = order.productID                      || Math.floor(Math.random() * 10);
-  // this.unitPrice = order.unitPrice                      || Number((Math.random() * 100).toFixed(2));
-  // this.quantity = order.quantity                        || Math.floor(Math.random() * 50);
-  // this.discount = order.discount                        || Math.floor(Math.random() * 100);
+
+const Order = function(order) {
+  this.customerID = order.customerID,
+  this.shipperID = order.shipperID,
+  this.orderDate = order.orderDate
 }
-
-
-// Number((Math.random() * 100).toFixed(2))
 
 // POST - create new order entry
 Order.create = (newOrder, result) => {
@@ -21,61 +17,80 @@ Order.create = (newOrder, result) => {
         result(err, null);
         return;
       }
-      console.log("order added to the DB: ", { orderID: res.insertId, ...newOrder });
-      console.log(res);
+      console.log("New row at orders table: ", { orderID: res.insertId, ...newOrder });
       result(null, { orderID: res.insertId, ...newOrder });
     });
   };
 
 // GET - get all orders entries
-Order.getAll = (orderIDFragment, result) => {
+Order.getAll = (condition, result) => {
     let query = "SELECT * FROM orders";
-  
-    if (orderIDFragment) {
-      query += ` WHERE orderID LIKE '%${orderIDFragment}%'`;
+    if (Object.keys(condition).length) {
+      query += ' WHERE ? LIKE "%?%"';
+      query = mysql.format(query, 
+        [String(Object.keys(condition)[0]), Object.values(condition)[0]]).replace(/'/g, "");
     }
   
     sql.query(query, (err, res) => {
       if (err) {
         console.log("error: ", err);
-        result(null, err);
+        result(err, null);
+        return;
+      }      
+      if (res.length == 0) {
+        console.log("No entries found");
+        result(null, null);
         return;
       }
-  
-      console.log("Order list: ", res);
+      console.log("Retrieved order list: ", res);
       result(null, res);
     });
   };  
 
 // GET - get order by id
 Order.getOrderByID = (id, result) => {
-  sql.query(`SELECT * FROM orders WHERE orderID = ?`, id, (err, res) => {
+  const selectOrderById = require("../migrations/004_1_select_all_order_details");
+  sql.query(selectOrderById, id, (err, res) => {
     if (err) {
       console.log("error: ", err);
       result(err, null);
       return;
     }
-
-    if (res.length) {
-      console.log("found order: ", res[0]);
-      result(null, res[0]);
+    if (!res.length) {
+      // product with selected id not found
+      result({ message: "order not_found" }, null);
       return;
     }
-
-    // order with selected id not found
-    result({ message: "order not_found" }, null);
+    
+    const orderBasket = [];
+    res.forEach(orderItem => {
+      orderBasket.push(
+        {
+          "productID" : orderItem.productID,
+          "productName" : orderItem.productName,
+          "product_category" : orderItem.categoryID,
+          "unitPrice" : orderItem.unitPrice,
+          "quantity" : orderItem.quantity,
+          "discount" : orderItem.discount,
+          "cost" : Number((orderItem.unitPrice * orderItem.quantity * (100-orderItem.discount) * 0.01).toFixed(2))
+        });
+    });
+    const formatedOrder = new OrderDetails (res, orderBasket);
+ 
+    console.log("found order: ", formatedOrder);
+    result(null, formatedOrder);    
   });
 };
 
 // PUT - update order
 Order.updateById = (id, newData, result) => {
   sql.query(
-    "UPDATE orders SET customerID = ?, employeeID = ?, orderDate WHERE orderID = ?",
-    [newData.customerID, newData.employeeID, newData.orderDate, id],
+    "UPDATE orders SET customerID = ?, shipperID = ?, orderDate = ? WHERE orderID = ?",
+    [newData.customerID, newData.shipperID, newData.orderDate, id],
     (err, res) => {
       if (err) {
         console.log("error: ", err);
-        result(null, err);
+        result(err, null);
         return;
       }
 
@@ -96,7 +111,7 @@ Order.remove = (id, result) => {
   sql.query("DELETE FROM orders WHERE orderID = ?", id, (err, res) => {
     if (err) {
       console.log("error: ", err);
-      result(null, err);
+      result( err, null );
       return;
     }
 
@@ -111,12 +126,12 @@ Order.remove = (id, result) => {
   });
 };
 
-// DELETE - delete all tutorials
+// DELETE - delete all Order records
 Order.removeAll = result => {
   sql.query("DELETE FROM orders", (err, res) => {
     if (err) {
       console.log("error: ", err);
-      result(null, err);
+      result(err, null);
       return;
     }
 
