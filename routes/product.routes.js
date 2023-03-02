@@ -19,9 +19,6 @@ const startProductRoutes = (app) => {
 
   // Delete a Product with id
   router.delete("/:id", products.delete);
-  
-  // Delete all Products
-  router.delete("/", products.deleteAll);
 
   app.use('/api/products', router);
 }

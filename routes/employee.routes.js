@@ -19,9 +19,6 @@ const startEmployeeRoutes = (app) => {
 
   // Delete a Employee with id
   router.delete("/:id", employees.delete);
-  
-  // Delete all Employees
-  router.delete("/", employees.deleteAll);
 
   app.use('/api/employees', router);
 }

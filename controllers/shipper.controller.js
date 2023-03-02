@@ -1,128 +1,149 @@
 const Shipper = require("../models/shipper.model.js");
+const { testInputValidity, createJsonMessage, randomMaxInt, randomMaxFloat} 
+  = require("../commons/functions");
 
 // Create and Save a new Shipper
 exports.create = (req, res) => {
-  // Validate request
-//   if (!req.body) {
-//     res.status(400).send({
-//       message: "Content can not be empty!"
-//     });
-//   }
+  try {
+    //read inputs
+    let receivedInputs = req.body;
+    
+    //  //Uncoment this section to fill up input by dummy values    
+    receivedInputs = { 
+      companyName : req.body.companyName    || `Dummy shipper ${randomMaxInt(100)}`,
+      phone : req.body.phone                || randomMaxInt(10000000)
+    }
 
-  // Create a shipper
-  // const newShipperEntry = new Shipper({
-  //   shipperName : req.body.shipperName || `Dummy shipper name ${Math.floor(Math.random() * 1000)}`,
-  //   supplierID : req.body.supplierID || Math.floor(Math.random() * 1000),
-  //   categoryID : req.body.categoryID || Math.floor(Math.random() * 1000),
-  //   quantityPerUnit : req.body.quantityPerUnit || 1,
-  //   unitPrice : req.body.unitPrice || Number((Math.random() * 100).toFixed(2))
-  // });
-  const newShipperEntry = new Shipper({
-    companyName : req.body.companyName,
-    phone : req.body.phone
-  });
+    // input validation
+    const requiredInputKeys = [
+      "companyName",
+      "phone"
+    ];
+    const invalidInputs = testInputValidity(receivedInputs, requiredInputKeys);
+    if (invalidInputs) {
+        const response = createJsonMessage(`Bad inputs for: ${invalidInputs}.`);
+        return res.status(422).send(response);
+    };
 
-  // Save Tutorial in the database
-  Shipper.create(newShipperEntry, (err, data) => {
-    if (err)
-      res.status(500).send({
-        message:
-          err.message || "Some error occurred while writting shipper data to DB."
-      });
-    else res.send(data);
-  });
+    // Save Tutorial in the database  
+    const newShipperEntry = new Shipper(receivedInputs);
+
+    Shipper.create(newShipperEntry, (err, result) => {
+      if (err)
+        res.status(500).send({
+          message:
+            err.message || "Some error occurred while writting shipper data to DB."
+        });
+      else res.send(result);
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(400).send(error);
+  } 
 };
 
 
 
 // Retrieve all Shippers from the database (with condition).
 exports.findAll = (req, res) => {
-    const nameFragment = req.query.nameFragment;
-  
-    Shipper.getAll(nameFragment, (err, data) => {
+  try {
+    const condition = req.body;
+    if (Object.keys(condition).length > 1) {
+        return res.status(400).send(createJsonMessage(`Bad search condition`));
+    }
+    Shipper.getAll(condition, (err, result) => {
       if (err)
         res.status(500).send({
           message:
             err.message || "Some error occurred while retrieving shippers."
         });
-      else res.send(data);
+      else {
+        if (!result)
+          return res.status(200).send(createJsonMessage("No entries found"));
+        res.status(200).send(result);
+      }
     });
-  };
+
+  } catch (error) {
+    console.error(error);
+    return res.status(400).send(error);
+  }
+};
 
 // Retrieve selected Shipper by ID
 exports.findByID = (req, res) => {
-  const id = req.params.id;
-  Shipper.getShipperByID(id, (err, data) => {
-    if (err) {
-      if (err.kind === "not_found") {
-        res.status(404).send({
-          message: `Not found Shipper with id ${id}.`
-        });
-      } else {
-        res.status(500).send({
-          message: "Error retrieving Shipper with id " + id
-        });
-      }
-    } else res.send(data);
-  });
+  try {
+    const id = req.params.id;
+    Shipper.getShipperByID(id, (err, result) => {
+      if (err) {
+        if (err.kind === "not_found") {
+          res.status(404).send({
+            message: `Not found shipper with id ${id}.`
+          });
+        } else {
+          res.status(500).send({
+            message: err.message || "Error retrieving shipper with id " + id
+          });
+        }
+      } else res.status(200).send(result);
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).send(error);
+  }
 };
 
 // Update a shipper identified by the id in the request
 exports.update = (req, res) => {
-  // Validate Request
-  if (!req.body) {
-    res.status(400).send({
-      message: "Content can not be empty!"
-    });
-  }
+  try {
+    // Validate Request
+    if (!req.body) {
+      res.status(400).send({
+        message: "Please provide inputs for update!"
+      });
+    }
 
-  // console.log(req.body);
-  const id = req.params.id;
-  Shipper.updateById(
-    id,
-    new Shipper(req.body),
-    (err, data) => {
+    const id = req.params.id;
+    Shipper.updateById( id, new Shipper(req.body), (err, result) => {
+        if (err) {
+          if (err.kind === "not_found") {
+            res.status(404).send({
+              message: `Not found Shipper with id ${id}.`
+            });
+          } else {
+            res.status(500).send({
+              message: err.message ||"Error updating shipper with id " + id
+            });
+          }
+        } else res.status(200).send(result);
+      }
+    );
+  } catch (error) {
+    console.error(error);
+    return res.status(400).send(error);
+  }
+};
+
+// Delete a Shipper with the specified id in the request
+exports.delete = (req, res) => {
+  try {
+    const id = req.params.id;
+    Shipper.remove(id, (err, result) => {
       if (err) {
         if (err.kind === "not_found") {
           res.status(404).send({
-            message: `Not found Shipper with id ${id}.`
+            message: `Not found Prduct with id ${id}.`
           });
         } else {
           res.status(500).send({
-            message: "Error updating shipper with id " + id
+            message: err.message || "Could not delete Shipper with id " + id
           });
         }
-      } else res.send(data);
-    }
-  );
-};
-
-// Delete a Tutorial with the specified id in the request
-exports.delete = (req, res) => {
-  const id = req.params.id;
-  Shipper.remove(id, (err, data) => {
-    if (err) {
-      if (err.kind === "not_found") {
-        res.status(404).send({
-          message: `Not found Prduct with id ${id}.`
-        });
-      } else {
-        res.status(500).send({
-          message: "Could not delete Shipper with id " + id
-        });
-      }
-    } else res.send({ message: `Shipper was deleted successfully!` });
-  });
-};
-
-// Delete all Tutorials from the database.
-exports.deleteAll = (req, res) => {
-  Shipper.removeAll((err, data) => {
-    if (err)
-      res.status(500).send({
-        message:
-          err.message || "Some error occurred while removing all Shippers."
-      });
-    else res.send({ message: `All Shippers were deleted successfully!` });
-  });
+      } else res.status(200).send({ message: `Shipper was deleted successfully!` });
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).send(error);
+  }
 };

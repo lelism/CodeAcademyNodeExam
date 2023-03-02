@@ -1,46 +1,51 @@
 const sql = require("../config/db.js");
+const mysql = require("mysql");
 
 const Product = function(product) {                     
-    this.productName = product.productName,          
-    this.supplierID = product.supplierID,            
-    this.categoryID = product.categoryID,            
-    this.quantityPerUnit = product.quantityPerUnit,  
-    this.unitPrice = product.unitPrice              
+  this.productName = product.productName,          
+  this.supplierID = product.supplierID,            
+  this.categoryID = product.categoryID,            
+  this.quantityPerUnit = product.quantityPerUnit,  
+  this.unitPrice = product.unitPrice              
 }
 
 // POST - create new product entry
 Product.create = (newProduct, result) => {
-    sql.query("INSERT INTO products SET ?", newProduct, (err, res) => {
-      if (err) {
-        console.log("error: ", err);
-        result(err, null);
-        return;
-      }
-      console.log("product added to the DB: ", { productID: res.insertId, ...newProduct });
-      console.log(res);
-      result(null, { productID: res.insertId, ...newProduct });
-    });
-  };
+  sql.query("INSERT INTO products SET ?", newProduct, (err, res) => {
+    if (err) {
+      console.log("error: ", err);
+      result(err, null);
+      return;
+    }
+    console.log("Product added to the DB: ", { productID: res.insertId, ...newProduct });
+    result(null, { productID: res.insertId, ...newProduct });
+  });
+};
 
 // GET - get all products entries
-Product.getAll = (productNameFragment, result) => {
-    let query = "SELECT * FROM products";
-  
-    if (productNameFragment) {
-      query += ` WHERE productName LIKE '%${productNameFragment}%'`;
+Product.getAll = (condition, result) => {
+  let query = "SELECT * FROM products";  
+  if (Object.keys(condition).length) {
+    query += ' WHERE ? LIKE "%?%"';
+    query = mysql.format(query, 
+      [String(Object.keys(condition)[0]), Object.values(condition)[0]]).replace(/'/g, "");
+  }
+
+  sql.query(query, (err, res) => {
+    if (err) {
+      console.log("error: ", err);
+      result(err, null);
+      return;
     }
-  
-    sql.query(query, (err, res) => {
-      if (err) {
-        console.log("error: ", err);
-        result(null, err);
-        return;
-      }
-  
-      // console.log("Product list: ", res);
-      result(null, res);
-    });
-  };  
+    if (res.length == 0) {
+      console.log("No entries found");
+      result(null, null);
+      return;
+    }
+    console.log("Retrieved product list: ", res);
+    result(null, res);
+  });
+};  
 
 // GET - get product by id
 Product.getProductByID = (id, result) => {
@@ -51,26 +56,35 @@ Product.getProductByID = (id, result) => {
       return;
     }
 
-    if (res.length) {
-      console.log("found product: ", res[0]);
-      result(null, res[0]);
+    if (!res.length) {
+        // product with selected id not found
+        result({ message: "product not_found" }, null);
       return;
     }
 
-    // product with selected id not found
-    result({ message: "product not_found" }, null);
+    console.log("found product: ", res[0]);
+    result(null, res[0]);
   });
 };
 
-// PATCH - update product
+// PUT - update product
 Product.updateById = (id, newData, result) => {
   sql.query(
-    "UPDATE products SET productName = ?, supplierID = ?, categoryID = ?, quantityPerUnit = ?, unitPrice = ? WHERE productID = ?",
-    [newData.productName, newData.supplierID, newData.categoryID, newData.quantityPerUnit, newData.unitPrice, id],
+    `UPDATE products 
+     SET productName = ?, supplierID = ?, categoryID = ?, quantityPerUnit = ?, unitPrice = ? 
+     WHERE productID = ?`,
+      [
+        newData.productName, 
+        newData.supplierID, 
+        newData.categoryID, 
+        newData.quantityPerUnit, 
+        newData.unitPrice, 
+        id
+      ],
     (err, res) => {
       if (err) {
         console.log("error: ", err);
-        result(null, err);
+        result(err, null);
         return;
       }
 
@@ -91,7 +105,7 @@ Product.remove = (id, result) => {
   sql.query("DELETE FROM products WHERE productID = ?", id, (err, res) => {
     if (err) {
       console.log("error: ", err);
-      result(null, err);
+      result(err, null);
       return;
     }
 
@@ -102,20 +116,6 @@ Product.remove = (id, result) => {
     }
 
     console.log("deleted product with id: ", id);
-    result(null, res);
-  });
-};
-
-// DELETE - delete all tutorials
-Product.removeAll = result => {
-  sql.query("DELETE FROM products", (err, res) => {
-    if (err) {
-      console.log("error: ", err);
-      result(null, err);
-      return;
-    }
-
-    console.log(`deleted ${res.affectedRows} products`);
     result(null, res);
   });
 };

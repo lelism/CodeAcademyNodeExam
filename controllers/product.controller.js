@@ -1,83 +1,87 @@
 const Product = require("../models/product.model.js");
+const { testInputValidity, createJsonMessage, randomMaxInt, randomMaxFloat} 
+  = require("../commons/functions");
 
 // Create and Save a new Product
 exports.create = (req, res) => {
-  // TO DO validate inputs
+  try {
+    //read inputs
+    let receivedInputs = req.body;
+    
+    //  //Uncoment this section to fill up input by dummy values    
+    // receivedInputs = {                             
+    //   productName : req.body.productName          || `Dummy name ${randomMaxInt(1000)}`,
+    //   supplierID : req.body.supplierID            || randomMaxInt(10),
+    //   categoryID : req.body.categoryID            || randomMaxInt(10),
+    //   quantityPerUnit : req.body.quantityPerUnit  || randomMaxInt(50),
+    //   unitPrice : req.body.unitPrice              || randomMaxFloat(1000)
+    // }
 
-  // Create a product
-  const newData = {                             // dummy values for DB fill up
-    productName : req.body.productName          || `Dummy product name ${Math.floor(Math.random() * 1000)}`,
-    supplierID : req.body.supplierID            || Math.floor(Math.random() * 1000),
-    categoryID : req.body.categoryID            || Math.floor(Math.random() * 1000),
-    quantityPerUnit : req.body.quantityPerUnit  || 1,
-    unitPrice : req.body.unitPrice              || Number((Math.random() * 100).toFixed(2))
-  }
+    // input validation
+    const requiredInputKeys = [
+      "productName",
+      "supplierID",
+      "categoryID",
+      "quantityPerUnit",
+      "unitPrice"
+    ];
+    const invalidInputs = testInputValidity(receivedInputs, requiredInputKeys);
+    if (invalidInputs) {
+        const response = createJsonMessage(`Bad inputs for: ${invalidInputs}.`);
+        return res.status(422).send(response);
+    };
 
-  const newProductEntry = new Product(newData);
+    // Save product row in the database
+    const newProductEntry = new Product(receivedInputs);
 
-  // Save Tutorial in the database
-  Product.create(newProductEntry, (err, data) => {
-    if (err)
-      res.status(500).send({
-        message:
-          err.message || "Some error occurred while writting product data to DB."
-      });
-    else res.send(data);
-  });
+    Product.create(newProductEntry, (err, result) => {
+      if (err)
+        res.status(500).send({
+          message:
+            err.message || "Some error occurred while writting product data to DB."
+        });
+      else res.status(201).send(result);
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(400).send(error);
+  }  
 };
 
 
 
 // Retrieve all Products from the database (with condition).
 exports.findAll = (req, res) => {
-    console.log("testas12345");
-    console.log(req.body);
-    const nameFragment = req.query.nameFragment;
-  
-    Product.getAll(nameFragment, (err, data) => {
+  try {
+    const condition = req.body;
+    if (Object.keys(condition).length > 1) {
+        return res.status(400).send(createJsonMessage(`Bad search condition`));
+    }
+    Product.getAll(condition, (err, result) => {
       if (err)
         res.status(500).send({
           message:
             err.message || "Some error occurred while retrieving products."
         });
-      else res.send(data);
+      else {
+        if (!result)
+          return res.status(200).send(createJsonMessage("No entries found"));
+        res.status(200).send(result);
+      }
     });
-  };
+
+  } catch (error) {
+    console.error(error);
+    return res.status(400).send(error);
+  }
+};
 
 // Retrieve selected Product by ID
 exports.findByID = (req, res) => {
-  const id = req.params.id;
-  console.log("testas: "+req.body);
-  Product.getProductByID(id, (err, data) => {
-    if (err) {
-      if (err.kind === "not_found") {
-        res.status(404).send({
-          message: `Not found Product with id ${id}.`
-        });
-      } else {
-        res.status(500).send({
-          message: "Error retrieving Product with id " + id
-        });
-      }
-    } else res.send(data);
-  });
-};
-
-// Update a product identified by the id in the request
-exports.update = (req, res) => {
-  // Validate Request
-  if (!req.body) {
-    res.status(400).send({
-      message: "Content can not be empty!"
-    });
-  }
-
-  // console.log(req.body);
-  const id = req.params.id;
-  Product.updateById(
-    id,
-    new Product(req.body),
-    (err, data) => {
+  try {
+    const id = req.params.id;
+    Product.getProductByID(id, (err, result) => {
       if (err) {
         if (err.kind === "not_found") {
           res.status(404).send({
@@ -85,40 +89,67 @@ exports.update = (req, res) => {
           });
         } else {
           res.status(500).send({
-            message: "Error updating product with id " + id
+            message: err.message || "Error retrieving Product with id " + id
           });
         }
-      } else res.send(data);
-    }
-  );
+      } else res.status(200).send(result);
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).send(error);
+  }
 };
 
-// Delete a Tutorial with the specified id in the request
-exports.delete = (req, res) => {
-  const id = req.params.id;
-  Product.remove(id, (err, data) => {
-    if (err) {
-      if (err.kind === "not_found") {
-        res.status(404).send({
-          message: `Not found Prduct with id ${id}.`
-        });
-      } else {
-        res.status(500).send({
-          message: "Could not delete Product with id " + id
-        });
-      }
-    } else res.send({ message: `Product was deleted successfully!` });
-  });
-};
-
-// Delete all Tutorials from the database.
-exports.deleteAll = (req, res) => {
-  Product.removeAll((err, data) => {
-    if (err)
-      res.status(500).send({
-        message:
-          err.message || "Some error occurred while removing all Products."
+// Update a product identified by the id in the request
+exports.update = (req, res) => {
+  try {
+    // Validate Request
+    if (!req.body) {
+      res.status(400).send({
+        message: "Please provide inputs for update!"
       });
-    else res.send({ message: `All Products were deleted successfully!` });
-  });
+    }
+
+    const id = req.params.id;
+    Product.updateById( id, new Product(req.body), (err, result) => {
+        if (err) {
+          if (err.kind === "not_found") {
+            res.status(404).send({
+              message: `Not found Product with id ${id}.`
+            });
+          } else {
+            res.status(500).send({
+              message: err.message ||"Error updating product with id " + id
+            });
+          }
+        } else res.status(200).send(result);
+      }
+    );
+  } catch (error) {
+    console.error(error);
+    return res.status(400).send(error);
+  }
+};
+
+// Delete a product with the specified id in the request
+exports.delete = (req, res) => {
+  try {
+    const id = req.params.id;
+    Product.remove(id, (err, result) => {
+      if (err) {
+        if (err.kind === "not_found") {
+          res.status(404).send({
+            message: `Not found Prduct with id ${id}.`
+          });
+        } else {
+          res.status(500).send({
+            message: err.message || "Could not delete Product with id " + id
+          });
+        }
+      } else res.status(200).send({ message: `Product was deleted successfully!` });
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).send(error);
+  }
 };

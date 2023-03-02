@@ -1,18 +1,26 @@
-// function returnMessage (messageText) {
-//     return { "Server message" : messageText };
-// };
+function testInputValidity (receivedInputs, requiredInputKeys) {
+    if (Object.entries(receivedInputs).length > requiredInputKeys.length) {
+        return "Too much input entries";
+    }
+    const missingInputKeys = [];
+    requiredInputKeys.forEach( key => {
+        if ( key in receivedInputs ) return
+        else missingInputKeys.push(key);
+    });
+    if (missingInputKeys.length) return missingInputKeys.join(", ");    
+    return null;
+};
 
-// function testInputValidity (receivedInputs, requiredInputKeys) {
-//     if (Object.entries(receivedInputs).length > requiredInputKeys.length) {
-//         return "Too much input entries";
-//     }
-//     const missingInputKeys = [];
-//     requiredInputKeys.forEach( requiredKey => {
-//         if ( (requiredKey in receivedInputs) && (!receivedInputs.requiredKey) ) return
-//         else missingInputKeys.push(requiredKey);
-//     });
-//     if (missingInputKeys.length) return missingInputKeys.join(", ");    
-//     return null;
-// };
+function createJsonMessage (messageText) {
+    return { "Server message" : messageText };
+};
 
-// module.exports = { returnMessage, testInputValidity };
+function randomMaxInt (maxNumber) {
+    return (1+Math.floor(Math.random() * maxNumber));
+};
+
+function randomMaxFloat (maxNumber) {
+    return (Number((Math.random() * maxNumber).toFixed(2)));
+};
+
+module.exports = { testInputValidity, createJsonMessage, randomMaxInt, randomMaxFloat };

@@ -1,49 +1,54 @@
 const sql = require("../config/db.js");
+const mysql = require("mysql");
 
-const Employee = function(employee) {                    //dummy values to fill up DB
-    this.lastName = employee.lastName                || `Dummy FirstName ${Math.floor(Math.random() * 1000)}`;
-    this.firstName = employee.firstName              || `Dummy LastName ${Math.floor(Math.random() * 1000)}`;
-    this.title = employee.title                      || `title ${Math.floor(Math.random() * 1000)}`;
-    this.titleOfCourtesy = employee.titleOfCourtesy  || `Ttl${Math.floor(Math.random() * 100)}`;
-    this.birthDate = employee.birthDate              || "2000-01-01";
-    this.hireDate = employee.hireDate                || "2001-01-01";
-    this.address = employee.address                  || `street ${Math.floor(Math.random() * 100)}`;
-    this.city = employee.city                        || `city ${Math.floor(Math.random() * 100)}`;
+const Employee = function(employee) {
+  this.lastName = employee.lastName,
+  this.firstName = employee.firstName,
+  this.title = employee.title,
+  this.titleOfCourtesy = employee.titleOfCourtesy,
+  this.birthDate = employee.birthDate,
+  this.hireDate = employee.hireDate,                
+  this.address = employee.address,
+  this.city = employee.city
 }
 
 // POST - create new employee entry
 Employee.create = (newEmployee, result) => {
-    sql.query("INSERT INTO employees SET ?", newEmployee, (err, res) => {
-      if (err) {
-        console.log("error: ", err);
-        result(err, null);
-        return;
-      }
-      console.log("employee added to the DB: ", { employeeID: res.insertId, ...newEmployee });
-      console.log(res);
-      result(null, { employeeID: res.insertId, ...newEmployee });
-    });
-  };
+  sql.query("INSERT INTO employees SET ?", newEmployee, (err, res) => {
+    if (err) {
+      console.log("error: ", err);
+      result(err, null);
+      return;
+    }
+    console.log("employee added to the DB: ", { employeeID: res.insertId, ...newEmployee });
+    result(null, { employeeID: res.insertId, ...newEmployee });
+  });
+};
 
 // GET - get all employee entries
-Employee.getAll = (employeeNameFragment, result) => {
-    let query = "SELECT * FROM employees";
-  
-    if (employeeNameFragment) {
-      query += ` WHERE lastName LIKE '%${employeeNameFragment}%'`;
+Employee.getAll = (condition, result) => {
+  let query = "SELECT * FROM employees";  
+  if (Object.keys(condition).length) {
+    query += ' WHERE ? LIKE "%?%"';
+    query = mysql.format(query, 
+      [String(Object.keys(condition)[0]), Object.values(condition)[0]]).replace(/'/g, "");
+  }
+
+  sql.query(query, (err, res) => {
+    if (err) {
+      console.log("error: ", err);
+      result(err, null);
+      return;
     }
-  
-    sql.query(query, (err, res) => {
-      if (err) {
-        console.log("error: ", err);
-        result(null, err);
-        return;
-      }
-  
-      console.log("Employee list: ", res);
-      result(null, res);
-    });
-  };  
+    if (res.length == 0) {
+      console.log("No entries found");
+      result(null, null);
+      return;
+    }
+    console.log("Retrieved employees list: ", res);
+    result(null, res);
+  });
+}; 
 
 // GET - get employee by id
 Employee.getEmployeeByID = (id, result) => {
@@ -54,26 +59,38 @@ Employee.getEmployeeByID = (id, result) => {
       return;
     }
 
-    if (res.length) {
-      console.log("found employee: ", res[0]);
-      result(null, res[0]);
-      return;
-    }
+    if (!res.length) {
+      // employee with selected id not found
+      result({ message: "employee not_found" }, null);
+    return;
+  }
 
-    // employee with selected id not found
-    result({ message: "employee not_found" }, null);
+  console.log("found employee: ", res[0]);
+  result(null, res[0]);
   });
 };
 
-// PATCH - update employee
+// PUT - update employee
 Employee.updateById = (id, newData, result) => {
   sql.query(
-    "UPDATE employees SET lastName = ?, firstName = ?, title = ?, titleOfCourtesy = ?, birthDate = ?, hireDate = ?, address = ?, city = ? WHERE employeeID = ?",
-    [newData.lastName, newData.firstName, newData.title, newData.titleOfCourtesy, newData.birthDate, newData.hireDate, newData.address, newData.city, id],
+    `UPDATE employees 
+     SET lastName = ?, firstName = ?, title = ?, titleOfCourtesy = ?, birthDate = ?, hireDate = ?, address = ?, city = ? 
+     WHERE employeeID = ?`,
+      [
+        newData.lastName, 
+        newData.firstName, 
+        newData.title, 
+        newData.titleOfCourtesy, 
+        newData.birthDate,
+        newData.hireDate, 
+        newData.address, 
+        newData.city, 
+        id
+      ],
     (err, res) => {
       if (err) {
         console.log("error: ", err);
-        result(null, err);
+        result(err, null);
         return;
       }
 
@@ -94,7 +111,7 @@ Employee.remove = (id, result) => {
   sql.query("DELETE FROM employees WHERE employeeID = ?", id, (err, res) => {
     if (err) {
       console.log("error: ", err);
-      result(null, err);
+      result(err, null);
       return;
     }
 
@@ -105,20 +122,6 @@ Employee.remove = (id, result) => {
     }
 
     console.log("deleted employee with id: ", id);
-    result(null, res);
-  });
-};
-
-// DELETE - delete all employees
-Employee.removeAll = result => {
-  sql.query("DELETE FROM employees", (err, res) => {
-    if (err) {
-      console.log("error: ", err);
-      result(null, err);
-      return;
-    }
-
-    console.log(`deleted ${res.affectedRows} employees`);
     result(null, res);
   });
 };

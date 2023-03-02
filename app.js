@@ -15,12 +15,15 @@ const app = express();
 app.use(express.json());
 
 startProductRoutes(app);
-// startEmployeeRoutes(app);
-// startShipperRoutes(app);
-// startOrderRoutes(app);
+startEmployeeRoutes(app);
+startShipperRoutes(app);
+startOrderRoutes(app);
 
 
-
+// Version route
+app.get("/version", (req, res) => {
+    res.json({ version: "v0.1.3" });
+  });
 
 app.listen(port, () => {
     console.log("Server is listening at port " + port);

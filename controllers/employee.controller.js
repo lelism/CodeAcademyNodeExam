@@ -1,92 +1,89 @@
 const Employee = require("../models/employee.model.js");
+const { testInputValidity, createJsonMessage, randomMaxInt, randomMaxFloat} 
+  = require("../commons/functions");
 
 // Create and Save a new Employee
 exports.create = (req, res) => {
-  // Validate request
-//   if (!req.body) {
-//     res.status(400).send({
-//       message: "Content can not be empty!"
-//     });
-//   }
+  try {
+    //read inputs
+    let receivedInputs = req.body;
 
-  // Create a employee
-  const newEmployeeEntry = new Employee({
-    lastName : req.body.lastName,
-    firstName : req.body.firstName,
-    title : req.body.title,
-    titleOfCourtesy : req.body.titleOfCourtesy,
-    birthDate : req.body.birthDate,
-    hireDate : req.body.hireDate,
-    address : req.body.address,
-    city : req.body.city,
-    // employeeName : req.body.employeeName || `Dummy employee name ${Math.floor(Math.random() * 1000)}`,
-    // supplierID : req.body.supplierID || Math.floor(Math.random() * 1000),
-    // categoryID : req.body.categoryID || Math.floor(Math.random() * 1000),
-    // quantityPerUnit : req.body.quantityPerUnit || 1,
-    // unitPrice : req.body.unitPrice || Number((Math.random() * 100).toFixed(2))
-  });
+    //  //Uncoment this section to fill up input by dummy values    
+    // receivedInputs = {                             
+    //   lastName : req.body.lastName                || `Dummy ${randomMaxInt(100)}`,
+    //   firstName : req.body.firstName              || `Dum ${randomMaxInt(100)}`,
+    //   title : req.body.title                      || `title ${randomMaxInt(10)}`,
+    //   titleOfCourtesy : req.body.titleOfCourtesy  || `Ttl${randomMaxInt(10)}`,
+    //   birthDate : req.body.birthDate              || "2000-01-01",
+    //   hireDate : req.body.hireDate                || "2001-01-01",
+    //   address : req.body.address                  || `street ${randomMaxInt(100)}`,
+    //   city : req.body.city                        || `city ${randomMaxInt(100)}`
+    // };
 
-  // Save Tutorial in the database
-  Employee.create(newEmployeeEntry, (err, data) => {
-    if (err)
-      res.status(500).send({
-        message:
-          err.message || "Some error occurred while writting employee data to DB."
-      });
-    else res.send(data);
-  });
+    // input validation
+    const requiredInputKeys = [
+      "lastName",
+      "firstName",
+      "title",
+      "titleOfCourtesy",
+      "birthDate",
+      "hireDate",
+      "address",
+      "city"
+    ];
+    const invalidInputs = testInputValidity(receivedInputs, requiredInputKeys);
+    if (invalidInputs) {
+        const response = createJsonMessage(`Bad inputs for: ${invalidInputs}.`);
+        return res.status(422).send(response);
+    };
+    // Save employee row in the database
+    const newEmployeeEntry = new Employee(receivedInputs);
+
+    Employee.create(newEmployeeEntry, (err, result) => {
+      if (err)
+        res.status(500).send({
+          message:
+            err.message || "Some error occurred while writting employee data to DB."
+        });
+      else res.status(200).send(result);
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).send(error);
+  }
 };
-
-
 
 // Retrieve all Employees from the database (with condition).
 exports.findAll = (req, res) => {
-    const nameFragment = req.query.nameFragment;
-    console.log(nameFragment);
-  
-    Employee.getAll(nameFragment, (err, data) => {
+  try {
+    const condition = req.body;
+    if (Object.keys(condition).length > 1) {
+        return res.status(400).send(createJsonMessage(`Bad search condition`));
+    }    
+    Employee.getAll(condition, (err, result) => {
       if (err)
         res.status(500).send({
           message:
             err.message || "Some error occurred while retrieving employees."
         });
-      else res.send(data);
+      else {
+        if (!result)
+          return res.status(200).send(createJsonMessage("No entries found"));
+        res.status(200).send(result);
+      }
     });
-  };
+
+  } catch (error) {
+    console.error(error);
+    return res.status(400).send(error);
+  }
+};
 
 // Retrieve selected Employee by ID
 exports.findByID = (req, res) => {
-  const id = req.params.id;
-  Employee.getEmployeeByID(id, (err, data) => {
-    if (err) {
-      if (err.kind === "not_found") {
-        res.status(404).send({
-          message: `Not found Employee with id ${id}.`
-        });
-      } else {
-        res.status(500).send({
-          message: "Error retrieving Employee with id " + id
-        });
-      }
-    } else res.send(data);
-  });
-};
-
-// Update a employee identified by the id in the request
-exports.update = (req, res) => {
-  // Validate Request
-  if (!req.body) {
-    res.status(400).send({
-      message: "Content can not be empty!"
-    });
-  }
-
-  // console.log(req.body);
-  const id = req.params.id;
-  Employee.updateById(
-    id,
-    new Employee(req.body),
-    (err, data) => {
+  try {
+    const id = req.params.id;
+    Employee.getEmployeeByID(id, (err, result) => {
       if (err) {
         if (err.kind === "not_found") {
           res.status(404).send({
@@ -94,40 +91,67 @@ exports.update = (req, res) => {
           });
         } else {
           res.status(500).send({
-            message: "Error updating employee with id " + id
+            message: err.message || "Error retrieving Employee with id " + id
           });
         }
-      } else res.send(data);
-    }
-  );
+      } else res.status(200).send(result);
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).send(error);
+  }
 };
 
-// Delete a Tutorial with the specified id in the request
-exports.delete = (req, res) => {
-  const id = req.params.id;
-  Employee.remove(id, (err, data) => {
-    if (err) {
-      if (err.kind === "not_found") {
-        res.status(404).send({
-          message: `Not found Prduct with id ${id}.`
-        });
-      } else {
-        res.status(500).send({
-          message: "Could not delete Employee with id " + id
-        });
-      }
-    } else res.send({ message: `Employee was deleted successfully!` });
-  });
-};
-
-// Delete all Tutorials from the database.
-exports.deleteAll = (req, res) => {
-  Employee.removeAll((err, data) => {
-    if (err)
-      res.status(500).send({
-        message:
-          err.message || "Some error occurred while removing all Employees."
+// Update a employee identified by the id in the request
+exports.update = (req, res) => {
+  try {
+    // Validate Request
+    if (!req.body) {
+      res.status(400).send({
+        message: "Please provide inputs for update!"
       });
-    else res.send({ message: `All Employees were deleted successfully!` });
-  });
+    }
+
+    const id = req.params.id;
+    Employee.updateById( id, new Employee(req.body), (err, result) => {
+        if (err) {
+          if (err.kind === "not_found") {
+            res.status(404).send({
+              message: `Not found Employee with id ${id}.`
+            });
+          } else {
+            res.status(500).send({
+              message: err.message || "Error updating employee with id " + id
+            });
+          }
+        } else res.status(200).send(result);
+      }
+    );
+  } catch (error) {
+    console.error(error);
+    return res.status(400).send(error);
+  }  
+};
+
+// Delete am emploee with the specified id in the request
+exports.delete = (req, res) => {
+  try {
+    const id = req.params.id;
+    Employee.remove(id, (err, result) => {
+      if (err) {
+        if (err.kind === "not_found") {
+          res.status(404).send({
+            message: `Not found Prduct with id ${id}.`
+          });
+        } else {
+          res.status(500).send({
+            message: err.message || "Could not delete Employee with id " + id
+          });
+        }
+      } else res.status(200).send({ message: `Employee was deleted successfully!` });
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).send(error);
+  }  
 };
