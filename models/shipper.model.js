@@ -1,7 +1,8 @@
 const sql = require("../config/db.js");
 
-const Shipper = function(shipper) {                    //dummy values for DB fill up 
-    this.companyName = shipper.companyName          || `Dummy shipper name ${Math.floor(Math.random() * 1000)}`;
+const Shipper = function(shipper) {
+    //  use provided values, or fill up with dummy values
+    this.companyName = shipper.companyName          || `Dummy shipper ${Math.floor(Math.random() * 1000)}`;
     this.phone = shipper.phone                      || Math.floor(Math.random() * 100000000);
 }
 

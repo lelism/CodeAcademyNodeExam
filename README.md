@@ -7,7 +7,8 @@ Progress:
 2. Creating and structuring DB tables
 3. Writting table models
 4. First fully functional beta version
+5. Optimisation of code structure 
 
-Pabaiga: <02:0> <2023-03-01>
+Pabaiga: <02:00> <2023-03-02>
 
 

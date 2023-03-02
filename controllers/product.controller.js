@@ -2,28 +2,18 @@ const Product = require("../models/product.model.js");
 
 // Create and Save a new Product
 exports.create = (req, res) => {
-  // Validate request
-//   if (!req.body) {
-//     res.status(400).send({
-//       message: "Content can not be empty!"
-//     });
-//   }
+  // TO DO validate inputs
 
   // Create a product
-  // const newProductEntry = new Product({
-  //   productName : req.body.productName || `Dummy product name ${Math.floor(Math.random() * 1000)}`,
-  //   supplierID : req.body.supplierID || Math.floor(Math.random() * 1000),
-  //   categoryID : req.body.categoryID || Math.floor(Math.random() * 1000),
-  //   quantityPerUnit : req.body.quantityPerUnit || 1,
-  //   unitPrice : req.body.unitPrice || Number((Math.random() * 100).toFixed(2))
-  // });
-  const newProductEntry = new Product({
-    productName : req.body.productName,
-    supplierID : req.body.supplierID,
-    categoryID : req.body.categoryID,
-    quantityPerUnit : req.body.quantityPerUnit,
-    unitPrice : req.body.unitPrice
-  });
+  const newData = {                             // dummy values for DB fill up
+    productName : req.body.productName          || `Dummy product name ${Math.floor(Math.random() * 1000)}`,
+    supplierID : req.body.supplierID            || Math.floor(Math.random() * 1000),
+    categoryID : req.body.categoryID            || Math.floor(Math.random() * 1000),
+    quantityPerUnit : req.body.quantityPerUnit  || 1,
+    unitPrice : req.body.unitPrice              || Number((Math.random() * 100).toFixed(2))
+  }
+
+  const newProductEntry = new Product(newData);
 
   // Save Tutorial in the database
   Product.create(newProductEntry, (err, data) => {
@@ -40,6 +30,8 @@ exports.create = (req, res) => {
 
 // Retrieve all Products from the database (with condition).
 exports.findAll = (req, res) => {
+    console.log("testas12345");
+    console.log(req.body);
     const nameFragment = req.query.nameFragment;
   
     Product.getAll(nameFragment, (err, data) => {
@@ -55,6 +47,7 @@ exports.findAll = (req, res) => {
 // Retrieve selected Product by ID
 exports.findByID = (req, res) => {
   const id = req.params.id;
+  console.log("testas: "+req.body);
   Product.getProductByID(id, (err, data) => {
     if (err) {
       if (err.kind === "not_found") {

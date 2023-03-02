@@ -1,8 +1,8 @@
 const sql = require("../config/db.js");
 
 const Order = function(order) {                             //dummy values for DB fill up 
-  this.customerID = order.customerID                    || Math.floor(Math.random() * 10);
-  this.shipperID = order.shipperID                      || Math.floor(Math.random() * 10);
+  this.customerID = order.customerID                    || 1+Math.floor(Math.random() * 10);
+  this.shipperID = order.shipperID                      || 1+Math.floor(Math.random() * 10);
   this.orderDate = order.orderDate                      || "2000-01-01";
   // this.productID = order.productID                      || Math.floor(Math.random() * 10);
   // this.unitPrice = order.unitPrice                      || Number((Math.random() * 100).toFixed(2));
@@ -22,7 +22,7 @@ Order.create = (newOrder, result) => {
         return;
       }
       console.log("order added to the DB: ", { orderID: res.insertId, ...newOrder });
-      console.log(res);
+      // console.log(res);
       result(null, { orderID: res.insertId, ...newOrder });
     });
   };

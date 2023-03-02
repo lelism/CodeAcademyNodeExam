@@ -1,13 +1,24 @@
 const sql = require("../config/db.js");
 
 const OrderDetail = function(orderDetail) {                             //dummy values for DB fill up 
-  this.orderID = orderDetail.customerID                       || Math.floor(Math.random() * 10);
-  // this.shipperID = order.shipperID                      || Math.floor(Math.random() * 10);
-  // this.orderDate = order.orderDate                      || "2000-01-01";
-  this.productID = orderDetail.productID                      || Math.floor(Math.random() * 10);
-  this.unitPrice = orderDetail.unitPrice                      || Number((Math.random() * 100).toFixed(2));
-  this.quantity = orderDetail.quantity                        || Math.floor(Math.random() * 50);
-  this.discount = orderDetail.discount                        || Math.floor(Math.random() * 100);
+  this.orderID = orderDetail.orderID                          || 1+Math.floor(Math.random() * 10);
+  // this.shipperID = order.shipperID                         || Math.floor(Math.random() * 10);
+  // this.orderDate = order.orderDate                         || "2000-01-01";
+  // this.productID = orderDetail.productID                      || Math.floor(Math.random() * 10);
+  // this.unitPrice = orderDetail.unitPrice                      || Number((Math.random() * 100).toFixed(2));
+  // this.quantity = orderDetail.quantity                        || Math.floor(Math.random() * 50);
+  // this.discount = orderDetail.discount                        || Math.floor(Math.random() * 100);
+  this.orderBasket = orderDetail.orderBasket                  || [{ "productID" : 1+Math.floor(Math.random() * 10),
+                                                                    "unitPrice" : Number((Math.random() * 100).toFixed(2)),
+                                                                    "quantity" : Math.floor(Math.random() * 50),
+                                                                    "discount" : Math.floor(Math.random() * 100)
+                                                                  },
+                                                                  { "productID" : 1+Math.floor(Math.random() * 10),
+                                                                    "unitPrice" : Number((Math.random() * 100).toFixed(2)),
+                                                                    "quantity" : Math.floor(Math.random() * 50),
+                                                                    "discount" : Math.floor(Math.random() * 100)
+                                                                  }
+                                                                ]
 }
 
 
@@ -15,15 +26,20 @@ const OrderDetail = function(orderDetail) {                             //dummy 
 
 // POST - create new orderDetail entry
 OrderDetail.create = (newOrderDetail, result) => {
-    sql.query("INSERT INTO orderDetails SET ?", newOrderDetail, (err, res) => {
-      if (err) {
-        console.log("error: ", err);
-        result(err, null);
-        return;
-      }
-      console.log("orderDetail added to the DB: ", { newOrderDetail });
-      console.log(res);
-      result(null, { newOrderDetail });
+    newOrderDetail.orderBasket.forEach( (basketItem, indx) => {
+      console.log("testas["+indx+"]");
+      const inputValues = { "orderID" : newOrderDetail.orderID, ...basketItem};
+      console.log(inputValues);
+      sql.query("INSERT INTO orderDetails SET ?", inputValues, (err, res) => {
+        if (err) {
+          console.log("error: ", err);
+          result(err, null);
+          return;
+        }
+        console.log("orderDetail added to the DB: ", inputValues);
+        // console.log(res);
+        result(null, { inputValues });
+      });
     });
   };
 

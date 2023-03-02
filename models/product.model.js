@@ -1,14 +1,12 @@
 const sql = require("../config/db.js");
 
-const Product = function(product) {                    //dummy values for DB fill up 
-    this.productName = product.productName          || `Dummy product name ${Math.floor(Math.random() * 1000)}`;
-    this.supplierID = product.supplierID            || Math.floor(Math.random() * 1000);
-    this.categoryID = product.categoryID            || Math.floor(Math.random() * 1000);
-    this.quantityPerUnit = product.quantityPerUnit  || 1;
-    this.unitPrice = product.unitPrice              || Number((Math.random() * 100).toFixed(2));
+const Product = function(product) {                     
+    this.productName = product.productName,          
+    this.supplierID = product.supplierID,            
+    this.categoryID = product.categoryID,            
+    this.quantityPerUnit = product.quantityPerUnit,  
+    this.unitPrice = product.unitPrice              
 }
-
-// Number((Math.random() * 100).toFixed(2))
 
 // POST - create new product entry
 Product.create = (newProduct, result) => {
@@ -39,7 +37,7 @@ Product.getAll = (productNameFragment, result) => {
         return;
       }
   
-      console.log("Product list: ", res);
+      // console.log("Product list: ", res);
       result(null, res);
     });
   };  

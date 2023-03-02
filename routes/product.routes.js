@@ -26,6 +26,4 @@ const startProductRoutes = (app) => {
   app.use('/api/products', router);
 }
 
-module.exports = {
-  startProductRoutes
-}
+module.exports = { startProductRoutes }

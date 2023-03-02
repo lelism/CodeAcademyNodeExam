@@ -1,6 +1,7 @@
 const Order = require("../models/order.model.js");
 const OrderDetail = require("../models/orderDetail.model.js");
 
+
 // Create and Save a new Order
 exports.create = (req, res) => {
   // Validate request
@@ -22,26 +23,36 @@ exports.create = (req, res) => {
     // productName : req.body.productName,
     customerID : req.body.customerID,
     shipperID : req.body.shipperID,
-    employeeID : req.body.employeeID,
     orderDate : req.body.orderDate
   });
 
-  const newOrderDetailEntry = new Order({
-    // productName : req.body.productName,
-    productID : req.body.productID,
-    unitPrice : req.body.unitPrice,
-    quantity : req.body.quantity,
-    discount : req.body.discount
-  });
-
   // Save Order in the database
-  Order.create(newOrderEntry, (err, data) => {
+  Order.create(newOrderEntry, (err, orderData) => {
     if (err)
       res.status(500).send({
         message:
           err.message || "Some error occurred while writting order data to DB."
       });
-    else res.send(data);
+    else {
+      console.log("reading new order details data:");
+      const newOrderDetailEntry = new OrderDetail({
+        orderID : orderData.orderID,
+        // productID : req.body.productID,
+        // unitPrice : req.body.unitPrice,
+        // quantity : req.body.quantity,
+        // discount : req.body.discount
+        orderBasket : orderData.orderBasket
+      });
+      OrderDetail.create(newOrderDetailEntry, (detailsErr, orderDetailsData) => {
+        if (detailsErr)
+          res.status(500).send({
+            message:
+              err.message || "Some error occurred while writting order details data to DB."
+          });
+        else console.log("all good");
+      });
+      res.send(orderData);    
+    }    
   });
 };
 
